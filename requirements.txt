@@ -1,0 +1,34 @@
+# RAG-Based AI Teaching Assistant - Dependencies
+
+# Speech-to-text
+openai-whisper==20231117
+torch>=2.0.0
+torchaudio>=2.0.0
+
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+joblib>=1.3.0
+
+# Retrieval: dense (FAISS) + sparse (BM25) + reranking
+faiss-cpu>=1.7.4
+rank_bm25>=0.2.2
+sentence-transformers>=2.2.0
+
+# API & web requests (Ollama)
+requests>=2.31.0
+
+# Audio/video processing
+ffmpeg-python>=0.2.0
+
+# Note: Ollama must be installed separately - https://ollama.ai
+# Required Ollama models: llama3.2, bge-m3
+
+# LangChain wrapper (langchain_pipeline.py)
+langchain-core>=0.2.0
+langchain-ollama>=0.1.0
+
+# Web API (api.py)
+fastapi>=0.110.0
+uvicorn>=0.27.0

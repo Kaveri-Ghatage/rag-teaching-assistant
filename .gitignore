@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Large raw media - never commit these (they're huge and not the point)
+videos/
+audios/*.mp3
+*.mp4
+*.avi
+*.mkv
+*.mov
+
+# NOTE: embeddings.joblib and faiss_index.bin are intentionally NOT
+# ignored - they're the real evidence this project actually ran on
+# real data. Do not add them back here.
+*.h5
+*.onnx
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+logs/
+
+# Regenerated every run - not useful to track, but keep one good example
+# pasted into README.md instead (see "Example Query" section)
+prompt.txt
+response.txt

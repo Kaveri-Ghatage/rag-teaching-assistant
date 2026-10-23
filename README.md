@@ -126,7 +126,7 @@ at timestamp 520.32 seconds (8 minutes 40 seconds).
 
 ## Author
 Kaveri Anil Ghatage
-LinkedIn: kaverighatage | GitHub: Kaveri2109
+LinkedIn: kaverighatage | GitHub: Kaveri-Ghatage
 
 ## Achievements
 - Kaggle Top 10%: Ranked 367/3,724 | XGBoost + SMOTE | 0.89 AUC-ROC

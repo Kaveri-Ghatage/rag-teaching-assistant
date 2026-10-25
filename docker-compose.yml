@@ -12,6 +12,8 @@ services:
       - ollama
     environment:
       - OLLAMA_URL=http://ollama:11434
+      - EMBEDDINGS_FILE=embeddings_merged.joblib
+      - INDEX_FILE=faiss_index_merged.bin
     stdin_open: true
     tty: true
 
@@ -22,6 +24,8 @@ services:
       - ollama
     environment:
       - OLLAMA_URL=http://ollama:11434
+      - EMBEDDINGS_FILE=embeddings_merged.joblib
+      - INDEX_FILE=faiss_index_merged.bin
     ports:
       - "8000:8000"
 

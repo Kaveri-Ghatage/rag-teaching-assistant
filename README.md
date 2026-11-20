@@ -23,7 +23,18 @@ ollama pull bge-m3
 python agent.py
 ```
 
-Status: the agent runs end to end. A hand-written evaluation set (tool-choice accuracy, retrieval hit rate, refusal rate) is in progress, so no agent-level numbers are reported yet. On a CPU-only laptop an answer takes about 2 to 3 minutes; the timings below were measured on a Colab T4 GPU.
+### Agent evaluation
+A hand-written set of 10 questions (`eval_set.py`, run with `python eval_agent.py`, results in `eval_results.csv`) checks whether the agent routes each question correctly: in-course questions should find the topic, out-of-course questions should be refused, and greetings should use no tool.
+
+| Version | In-course | Out-of-course | No tool | Overall |
+|---|---|---|---|---|
+| First version | 4/5 | 2/3 | 0/2 | 6/10 |
+| Stricter system prompt | 5/5 | 3/3 | 0/2 | 8/10 |
+| Plus a rule for greetings and thanks | 5/5 | 3/3 | 2/2 | 10/10 |
+
+What this showed: retrieval and the confidence gate worked whenever the tool was called. The failures were the small 3B model choosing the wrong tool behaviour (skipping the tool, or searching the lectures for "Hi!"). Caveat: only 10 questions, written before tuning, so 10/10 is not a general accuracy claim. A larger 40-question set is next, and answer quality (faithfulness, timestamps) is not measured yet.
+
+On a CPU-only laptop an answer takes about 2 to 3 minutes; the timings below were measured on a Colab T4 GPU.
 
 ## Data
 18 lectures from the CodeWithHarry Sigma Web Development course (about 4.2 hours), transcribed with Whisper large-v2 (Hindi to English). That gives 7,252 transcript segments, which are merged into 1,222 overlapping passages of about 60 words. The lectures and their content belong to their creator; the transcripts here are used only to demonstrate the system.
@@ -114,7 +125,7 @@ FAISS IVF-Flat is **57x faster** than brute-force cosine search on the same data
 - The LLM judge in the answer check is the same small model that writes the answers.
 - LLaMA 3.2 (3B) sometimes gives generic answers to vague questions.
 - Retrieval sometimes returns the right topic from a different lecture.
-- The agent is slow on CPU, and its timestamps are sometimes off (for example, a cited start time that does not match the retrieved passage); the agent evaluation is meant to measure this.
+- The agent evaluation has only 10 questions, and the agent is slow on CPU. Its cited timestamps are sometimes off (for example, a start time that does not match the retrieved passage); this is not measured yet.
 
 ## Tech stack
 Whisper large-v2, BGE-M3 (Ollama), FAISS IVF-Flat, BM25 (rank_bm25), Reciprocal Rank Fusion, cross-encoder/ms-marco-MiniLM-L-6-v2 (sentence-transformers), LLaMA 3.2 (Ollama, function calling), FastAPI, LangChain, Docker, Python.
@@ -134,18 +145,10 @@ Without the two environment variables the original per-segment index is used.
 
 ## Reproduce the evaluation
 ```bash
-### Agent evaluation
-A hand-written set of 10 questions (`eval_set.py`, run with `python eval_agent.py`, results in `eval_results.csv`) checks whether the agent routes each question correctly: in-course questions should find the topic, out-of-course questions should be refused, and greetings should use no tool.
-
-| Version | In-course | Out-of-course | No tool | Overall |
-|---|---|---|---|---|
-| First version | 4/5 | 2/3 | 0/2 | 6/10 |
-| Stricter system prompt | 5/5 | 3/3 | 0/2 | 8/10 |
-| Plus a rule for greetings and thanks | 5/5 | 3/3 | 2/2 | 10/10 |
-
-What this showed: retrieval and the confidence gate worked whenever the tool was called. The failures were the small 3B model choosing the wrong tool behaviour (skipping the tool, or searching the lectures for "Hi!"). Caveat: only 10 questions, written before tuning, so 10/10 is not a general accuracy claim. A larger 40-question set is next, and answer quality (faithfulness, timestamps) is not measured yet.
-
-On a CPU-only laptop an answer takes about 2 to 3 minutes; the timings below were measured on a Colab T4 GPU.
+EMBEDDINGS_FILE=embeddings_merged.joblib INDEX_FILE=faiss_index_merged.bin python evaluate_retrieval.py --n 1000
+python evaluate_retrieval.py --n 1000      # original short segments, same questions
+EMBEDDINGS_FILE=embeddings_merged.joblib INDEX_FILE=faiss_index_merged.bin python evaluate_answers.py --n 50
+python eval_agent.py                       # agent routing evaluation (10 questions)
 ```
 
 ## Author

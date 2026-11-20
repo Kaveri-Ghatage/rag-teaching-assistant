@@ -1,9 +1,9 @@
-# RAG-Based AI Teaching Assistant
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/5b3ef319-a628-4353-8cb3-c1a46eb3e268" /># RAG-Based AI Teaching Assistant
 IEEE Published Research | Kaggle Top 10% | GATE 2025
 
 Ask a question about lecture videos and get a short answer that points to the exact video and minute to watch. It uses hybrid retrieval (dense + keyword), a cross-encoder reranker, a confidence gate that refuses questions the course does not cover, and a local LLM (LLaMA 3.2 through Ollama).
 
-**Origin:** This project extends the RAG teaching-assistant project from CodeWithHarry's data science course. My additions: hybrid retrieval (FAISS + BM25 + Reciprocal Rank Fusion), cross-encoder reranking, a confidence gate for off-topic questions, and a reproducible evaluation (see Results).
+Origin: This project extends the RAG teaching-assistant idea from CodeWithHarry's Sigma Web Development course. My additions: hybrid retrieval (FAISS + BM25 + Reciprocal Rank Fusion), cross-encoder reranking, a confidence gate for off-topic questions, a tool-calling agent, and a reproducible evaluation (see Results).
 
 **Demo video:** _(add link)_
 

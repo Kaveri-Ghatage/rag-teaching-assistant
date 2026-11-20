@@ -1,0 +1,11 @@
+question,kind,tool_called,in_course,videos_top5,pass
+How do I create a form in HTML?,in_course,True,True,"3,13,13,5,4",True
+What is the difference between class and id in CSS?,in_course,True,True,"9,9,9,9,9",True
+How does flexbox work?,in_course,True,True,"13,18,5,5,2",True
+What are JavaScript variables and how do I declare them?,in_course,True,True,"14,1,2,1,2",True
+How do I select an element using the DOM?,in_course,True,True,"14,18,17,17,17",True
+Who won the 2011 cricket world cup?,out_of_course,True,False,,True
+How do I train a neural network in PyTorch?,out_of_course,True,False,,True
+What is the capital of Australia?,out_of_course,True,False,,True
+Hi!,no_tool,False,,,True
+"Thanks, that helped.",no_tool,False,,,True

@@ -143,4 +143,7 @@ EMBEDDINGS_FILE=embeddings_merged.joblib INDEX_FILE=faiss_index_merged.bin pytho
 Kaveri Anil Ghatage
 LinkedIn: linkedin.com/in/kaverighatage | GitHub: Kaveri-Ghatage
 
-##
+## Achievements
+- Kaggle Top 10%: ranked 367/3,724 | XGBoost + SMOTE | 0.89 AUC-ROC
+- GATE 2025 qualified (ECE)
+- IEEE published researcher 2025

@@ -1,9 +1,10 @@
-RAG-Based AI Teaching Assistant
+# RAG-Based AI Teaching Assistant
 IEEE Published Research | Kaggle Top 10% | GATE 2025
 
 Ask a question about lecture videos and get a short answer that points to the exact video and minute to watch. It uses hybrid retrieval (dense + keyword), a cross-encoder reranker, a confidence gate that refuses questions the course does not cover, and a local LLM (LLaMA 3.2 through Ollama).
 
 Origin: This project extends the RAG teaching-assistant idea from CodeWithHarry's Sigma Web Development course. My additions: hybrid retrieval (FAISS + BM25 + Reciprocal Rank Fusion), cross-encoder reranking, a confidence gate for off-topic questions, a tool-calling agent, and a reproducible evaluation (see Results).
+
 **Demo video:** _(add link)_
 
 ## What it does
@@ -11,6 +12,18 @@ Origin: This project extends the RAG teaching-assistant idea from CodeWithHarry'
 - Answers in 2 to 4 sentences and names the video, title and minute to watch, with the source passages shown below the answer.
 - Says "the course does not seem to cover this" when the best passage is not relevant enough, instead of making something up.
 - Everything runs locally (Ollama, FAISS, BM25); no paid API is needed.
+
+## Tool-calling agent
+`agent.py` adds an agent on top of the pipeline. The model (LLaMA 3.2 through Ollama, using function calling) decides whether to call the `search_lectures` tool in `tools.py`. The tool runs the full hybrid retrieval and reranking pipeline. If the best reranker score is below -7.44, it returns `in_course: False` and the agent refuses. Otherwise the model answers only from the returned passages and cites the video number and timestamp.
+
+```bash
+pip install -r req_agent.txt
+ollama pull llama3.2
+ollama pull bge-m3
+python agent.py
+```
+
+Status: the agent runs end to end. A hand-written evaluation set (tool-choice accuracy, retrieval hit rate, refusal rate) is in progress, so no agent-level numbers are reported yet. On a CPU-only laptop an answer takes about 2 to 3 minutes; the timings below were measured on a Colab T4 GPU.
 
 ## Data
 18 lectures from the CodeWithHarry Sigma Web Development course (about 4.2 hours), transcribed with Whisper large-v2 (Hindi to English). That gives 7,252 transcript segments, which are merged into 1,222 overlapping passages of about 60 words. The lectures and their content belong to their creator; the transcripts here are used only to demonstrate the system.
@@ -101,9 +114,10 @@ FAISS IVF-Flat is **57x faster** than brute-force cosine search on the same data
 - The LLM judge in the answer check is the same small model that writes the answers.
 - LLaMA 3.2 (3B) sometimes gives generic answers to vague questions.
 - Retrieval sometimes returns the right topic from a different lecture.
+- The agent is slow on CPU, and its timestamps are sometimes off (for example, a cited start time that does not match the retrieved passage); the agent evaluation is meant to measure this.
 
 ## Tech stack
-Whisper large-v2, BGE-M3 (Ollama), FAISS IVF-Flat, BM25 (rank_bm25), Reciprocal Rank Fusion, cross-encoder/ms-marco-MiniLM-L-6-v2 (sentence-transformers), LLaMA 3.2 (Ollama), FastAPI, LangChain, Docker, Python.
+Whisper large-v2, BGE-M3 (Ollama), FAISS IVF-Flat, BM25 (rank_bm25), Reciprocal Rank Fusion, cross-encoder/ms-marco-MiniLM-L-6-v2 (sentence-transformers), LLaMA 3.2 (Ollama, function calling), FastAPI, LangChain, Docker, Python.
 
 ## Quick start
 ```bash
@@ -129,7 +143,4 @@ EMBEDDINGS_FILE=embeddings_merged.joblib INDEX_FILE=faiss_index_merged.bin pytho
 Kaveri Anil Ghatage
 LinkedIn: linkedin.com/in/kaverighatage | GitHub: Kaveri-Ghatage
 
-## Achievements
-- Kaggle Top 10%: ranked 367/3,724 | XGBoost + SMOTE | 0.89 AUC-ROC
-- GATE 2025 qualified (ECE)
-- IEEE published researcher 2025
+##

@@ -4,7 +4,6 @@ IEEE Published Research | Kaggle Top 10% | GATE 2025
 Ask a question about lecture videos and get a short answer that points to the exact video and minute to watch. It uses hybrid retrieval (dense + keyword), a cross-encoder reranker, a confidence gate that refuses questions the course does not cover, and a local LLM (LLaMA 3.2 through Ollama).
 
 Origin: This project extends the RAG teaching-assistant idea from CodeWithHarry's Sigma Web Development course. My additions: hybrid retrieval (FAISS + BM25 + Reciprocal Rank Fusion), cross-encoder reranking, a confidence gate for off-topic questions, a tool-calling agent, and a reproducible evaluation (see Results).
-
 **Demo video:** _(add link)_
 
 ## What it does

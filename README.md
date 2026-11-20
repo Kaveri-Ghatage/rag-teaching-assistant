@@ -134,9 +134,18 @@ Without the two environment variables the original per-segment index is used.
 
 ## Reproduce the evaluation
 ```bash
-EMBEDDINGS_FILE=embeddings_merged.joblib INDEX_FILE=faiss_index_merged.bin python evaluate_retrieval.py --n 1000
-python evaluate_retrieval.py --n 1000      # original short segments, same questions
-EMBEDDINGS_FILE=embeddings_merged.joblib INDEX_FILE=faiss_index_merged.bin python evaluate_answers.py --n 50
+### Agent evaluation
+A hand-written set of 10 questions (`eval_set.py`, run with `python eval_agent.py`, results in `eval_results.csv`) checks whether the agent routes each question correctly: in-course questions should find the topic, out-of-course questions should be refused, and greetings should use no tool.
+
+| Version | In-course | Out-of-course | No tool | Overall |
+|---|---|---|---|---|
+| First version | 4/5 | 2/3 | 0/2 | 6/10 |
+| Stricter system prompt | 5/5 | 3/3 | 0/2 | 8/10 |
+| Plus a rule for greetings and thanks | 5/5 | 3/3 | 2/2 | 10/10 |
+
+What this showed: retrieval and the confidence gate worked whenever the tool was called. The failures were the small 3B model choosing the wrong tool behaviour (skipping the tool, or searching the lectures for "Hi!"). Caveat: only 10 questions, written before tuning, so 10/10 is not a general accuracy claim. A larger 40-question set is next, and answer quality (faithfulness, timestamps) is not measured yet.
+
+On a CPU-only laptop an answer takes about 2 to 3 minutes; the timings below were measured on a Colab T4 GPU.
 ```
 
 ## Author

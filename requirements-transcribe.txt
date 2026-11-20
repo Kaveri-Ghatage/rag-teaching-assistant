@@ -1,0 +1,7 @@
+# Only needed for steps 1-2 (video -> audio -> Whisper transcription).
+# Install on top of requirements.txt:  pip install -r requirements-transcribe.txt
+openai-whisper
+torch>=2.0.0
+torchaudio>=2.0.0
+ffmpeg-python>=0.2.0
+# ffmpeg itself must also be installed on the system.

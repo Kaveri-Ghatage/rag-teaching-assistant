@@ -19,6 +19,14 @@ from pydantic import BaseModel, Field
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 LLM_MODEL = os.environ.get("LLM_MODEL", "llama3.2")
 
+# Confidence gate: if even the best passage scores below this reranker score, the course probably does
+# not cover the question, so we say so without calling the language model. -7.44 is the 5th percentile
+# of top reranker scores on 200 in-course test questions (calibrated on held-out data), so about 95%
+# of in-course questions pass; see README for the measured effect on out-of-course questions.
+REFUSE_BELOW = float(os.environ.get("REFUSE_BELOW", "-7.44"))
+NOT_COVERED = ("The course does not seem to cover this question. "
+               "Try asking about a topic from the lectures, for example HTML, CSS or JavaScript basics.")
+
 app = FastAPI(title="RAG Teaching Assistant", version="1.0")
 
 
@@ -47,17 +55,23 @@ def retrieve(question: str, top_k: int):
     return hybrid_retrieve(question, dense_k=20, sparse_k=20, fused_k=15, final_k=top_k)
 
 
+def is_covered(df) -> bool:
+    """True if the best retrieved passage is relevant enough to answer from."""
+    return float(df["rerank_score"].max()) >= REFUSE_BELOW
+    
 def build_prompt(question: str, df) -> str:
-    chunks = df[["title", "number", "start", "end", "text"]].to_json(orient="records")
+    df = df.copy()
+    df["at"] = df["start"].apply(lambda s: f"{int(s // 60)}:{int(s % 60):02d}")
+    chunks = df[["title", "number", "at", "text"]].to_json(orient="records")
     return (
-        "I am teaching web development in a course. Here are video subtitle chunks "
-        "(video title, video number, start and end time in seconds, text):\n\n"
+        "You are a teaching assistant for a web development course. Below are transcript "
+        "excerpts (video title, video number, time in minutes:seconds, text):\n\n"
         f"{chunks}\n---------------------------------\n"
-        f'"{question}"\n'
-        "The user asked this question. Answer in a human way: say in which video and at "
-        "what timestamp the topic is taught and guide the user to that video. Do not mention "
-        "the chunk format. If the question is unrelated to the course, say you can only "
-        "answer questions about the course."
+        f"Student question: {question}\n\n"
+        "Answer in 2 to 4 short sentences, speaking directly to the student. Use only the "
+        "excerpts. First give the answer briefly, then say which video (number and title) "
+        "and the minute:second to watch it. If the excerpts do not cover the question, say "
+        "the course does not seem to cover it. Do not mention excerpts or chunks."
     )
 
 
@@ -81,6 +95,8 @@ def ask(body: Question):
     start = time.time()
     try:
         df = retrieve(body.question, body.top_k)
+        if not is_covered(df):
+            return Answer(answer=NOT_COVERED, sources=[], latency_seconds=round(time.time() - start, 2))
         answer = ask_llm(build_prompt(body.question, df))
     except requests.RequestException as e:
         raise HTTPException(status_code=503, detail=f"Could not reach Ollama at {OLLAMA_URL}: {e}")
@@ -100,3 +116,4 @@ def ask(body: Question):
 @app.get("/")
 def index():
     return FileResponse(os.path.join(os.path.dirname(__file__), "static", "index.html"))
+    

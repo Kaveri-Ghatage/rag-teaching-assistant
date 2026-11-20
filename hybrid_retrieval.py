@@ -1,38 +1,17 @@
 """
 Hybrid retrieval pipeline: FAISS dense search + BM25 keyword search,
 fused with Reciprocal Rank Fusion, then refined with a cross-encoder reranker.
-
 (Kaveri Anil Ghatage - RAG Teaching Assistant)
 
-WHY HYBRID RETRIEVAL, so you can explain this in an interview:
-- FAISS (dense/semantic search) is great at understanding MEANING. It will
-  match "how do I make text bold" to a chunk that says "use the <strong> tag"
-  even with zero overlapping words, because the embeddings capture meaning.
-- BM25 (sparse/keyword search) is great at EXACT terms. If a student asks
-  "what is z-index", BM25 reliably surfaces chunks that literally contain
-  "z-index" - something dense search can sometimes under-rank if the
-  embedding model wasn't trained heavily on that exact jargon.
-- Using both and fusing the results covers each method's blind spot.
-
-WHY RECIPROCAL RANK FUSION (RRF), not just averaging scores:
-FAISS returns inner-product scores; BM25 returns TF-IDF-based scores. These
-two scales are NOT comparable (e.g. FAISS might range 0-1, BM25 might range
-0-20) so averaging them directly is meaningless without careful tuning.
-RRF sidesteps this entirely: it only looks at each chunk's RANK in each
-list (1st place, 2nd place, ...), not the raw score. A chunk ranked #1 in
-both lists scores higher than one ranked #1 in only one list. This is the
-same fusion technique used in real hybrid search systems (e.g. Elasticsearch
-8.8+'s RRF retriever).
-
-WHY A CROSS-ENCODER ON TOP OF THAT:
-FAISS and BM25 are both "fast but approximate" - they embed/score the query
-and each document SEPARATELY, then compare. A cross-encoder instead reads
-the query and a candidate chunk TOGETHER in one forward pass, so it can
-catch relationships a separate-embedding approach misses. It's too slow to
-run against all 7,252 chunks, so we only rerank the ~15 candidates RRF
-already shortlisted - this is the standard "retrieve cheap, rerank precise"
-pattern used in production search systems.
+Why hybrid: dense search (FAISS) matches MEANING, keyword search (BM25) matches EXACT terms
+such as "z-index"; using both covers each method's blind spot.
+Why RRF: FAISS and BM25 scores are on different scales, so RRF fuses by RANK, not by score.
+Why a cross-encoder: it reads the query and a candidate passage TOGETHER, which is more precise
+than comparing separate embeddings, but too slow for every passage, so it only reranks the
+~15 candidates RRF shortlisted ("retrieve cheap, rerank precise").
 """
+import os
+
 import joblib
 import numpy as np
 import faiss
@@ -43,18 +22,19 @@ from sentence_transformers import CrossEncoder
 from embedding_utils import embed_query
 
 print("Loading real chunk data and indices...")
-df = joblib.load("embeddings.joblib")
-faiss_index = faiss.read_index("faiss_index.bin")
+# Defaults use the original per-segment data; set EMBEDDINGS_FILE / INDEX_FILE to use the merged passages
+# (embeddings_merged.joblib / faiss_index_merged.bin).
+df = joblib.load(os.environ.get("EMBEDDINGS_FILE", "embeddings.joblib"))
+faiss_index = faiss.read_index(os.environ.get("INDEX_FILE", "faiss_index.bin"))
 faiss.extract_index_ivf(faiss_index).nprobe = 10
 
-# Build BM25 index once at startup (cheap - milliseconds for 7,252 chunks)
+# Build BM25 index once at startup (cheap - milliseconds)
 tokenized_corpus = [doc.lower().split() for doc in df["text"].tolist()]
 bm25 = BM25Okapi(tokenized_corpus)
 chunk_ids = df["chunk_id"].tolist()
 
-# Cross-encoder is loaded lazily on first actual use (not at import time).
-# First call downloads the model (~90MB) from Hugging Face - needs internet
-# once, then it's cached locally for every run after that.
+# Cross-encoder is loaded lazily on first use. The first call downloads the model (~90MB)
+# from Hugging Face; after that it is cached locally.
 _reranker = None
 def get_reranker():
     global _reranker
@@ -66,9 +46,7 @@ def get_reranker():
 def reciprocal_rank_fusion(dense_ids, sparse_ids, k=60):
     """
     dense_ids / sparse_ids: ranked lists of chunk_ids (best match first).
-    k=60 is the standard RRF damping constant from the original paper
-    (Cormack et al., 2009) - it just softens the impact of rank differences
-    so a #1 vs #2 ranking doesn't swing the score wildly.
+    k=60 is the standard RRF damping constant (Cormack et al., 2009).
     Returns chunk_ids sorted by fused score, best first.
     """
     scores = {}
